@@ -1,0 +1,140 @@
+  METHOD create_log.
+
+    DATA: lt_output_text TYPE string_table,
+          lv_update_task TYPE sy-subrc.
+
+    IF iv_message IS INITIAL AND it_log IS INITIAL AND is_message_from_return IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    "if return parameter structure is directly passed, we need to format this to string message
+    IF is_message_from_return IS NOT INITIAL AND iv_message IS INITIAL.
+      CALL FUNCTION 'FORMAT_MESSAGE'
+        EXPORTING
+          id        = is_message_from_return-id
+          lang      = sy-langu
+          no        = is_message_from_return-number
+          v1        = is_message_from_return-message_v1
+          v2        = is_message_from_return-message_v2
+          v3        = is_message_from_return-message_v3
+          v4        = is_message_from_return-message_v4
+        IMPORTING
+          msg       = iv_message
+        EXCEPTIONS
+          not_found = 1
+          OTHERS    = 2.
+      IF sy-subrc <> 0.
+* Implement suitable error handling here
+      ENDIF.
+    ENDIF.
+
+    IF iv_message IS NOT INITIAL.
+      CALL FUNCTION 'SOTR_SERV_STRING_TO_TABLE'
+        EXPORTING
+          text        = iv_message
+*         FLAG_NO_LINE_BREAKS       = 'X'
+          line_length = 50
+*         LANGU       = SY-LANGU
+        TABLES
+          text_tab    = lt_output_text.
+
+      LOOP AT lt_output_text ASSIGNING FIELD-SYMBOL(<fs_50>).
+        DATA(lv_rem) = sy-tabix MOD 4.
+        CASE lv_rem.
+          WHEN 1.
+            APPEND INITIAL LINE TO it_log ASSIGNING FIELD-SYMBOL(<fs_log_table>).
+            <fs_log_table>-msgty = iv_msgty.
+            <fs_log_table>-msgid = 'ZMM_SFOR'.
+            <fs_log_table>-msgno = '000'.
+
+            <fs_log_table>-msgv1 = <fs_50>.
+          WHEN 2.
+            IF <fs_log_table> IS ASSIGNED.
+              <fs_log_table>-msgv2 = <fs_50>.
+            ENDIF.
+          WHEN 3.
+            IF <fs_log_table> IS ASSIGNED.
+              <fs_log_table>-msgv3 = <fs_50>.
+            ENDIF.
+          WHEN 0.
+            IF <fs_log_table> IS ASSIGNED.
+              <fs_log_table>-msgv4 = <fs_50>.
+            ENDIF.
+        ENDCASE.
+      ENDLOOP.
+    ENDIF.
+
+    DATA: ls_log        TYPE bal_s_log,
+          lw_log_handle TYPE balloghndl,
+          li_log_handle TYPE bal_t_logh,
+          ls_msg        TYPE bal_s_msg.
+
+    ls_log-extnumber  = iv_external_id.
+    ls_log-object     = iv_object.
+    ls_log-subobject  = iv_subobject.
+    ls_log-aldate     = sy-datum.
+    ls_log-altime     = sy-uzeit.
+    ls_log-aluser     = iv_user.
+    ls_log-altcode    = sy-tcode.
+    ls_log-alprog    = sy-cprog.
+
+    IF it_log IS NOT INITIAL.
+* Create log.
+      CALL FUNCTION 'BAL_LOG_CREATE'
+        EXPORTING
+          i_s_log      = ls_log
+        IMPORTING
+          e_log_handle = lw_log_handle
+        EXCEPTIONS
+          OTHERS       = 1.
+      IF sy-subrc <> 0.
+        MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4
+        RAISING log_header_inconsistent.
+      ELSE.
+        APPEND lw_log_handle TO li_log_handle.
+      ENDIF.
+    ENDIF.
+
+    LOOP AT it_log INTO ls_msg.
+* Create messages.
+      CALL FUNCTION 'BAL_LOG_MSG_ADD'
+        EXPORTING
+          i_log_handle     = lw_log_handle
+          i_s_msg          = ls_msg
+        EXCEPTIONS
+          log_not_found    = 1
+          msg_inconsistent = 2
+          log_is_full      = 3
+          OTHERS           = 4.
+      IF sy-subrc <> 0.
+        MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4
+        RAISING logging_error.
+      ENDIF.
+    ENDLOOP.
+
+* Save the application log.
+    CALL FUNCTION 'BAL_DB_SAVE'
+      EXPORTING
+        i_t_log_handle   = li_log_handle
+      EXCEPTIONS
+        log_not_found    = 1
+        save_not_allowed = 2
+        numbering_error  = 3
+        OTHERS           = 4.
+    IF sy-subrc <> 0.
+*      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+*      WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4
+*      RAISING logging_error.
+    ELSE.
+*      COMMIT WORK AND WAIT. " we can not COMMIT in update task processing
+      CALL FUNCTION 'TH_IN_UPDATE_TASK'
+        IMPORTING
+          in_update_task = lv_update_task.
+      IF lv_update_task EQ 0.  " NOT in update task
+        COMMIT WORK AND WAIT.
+      ENDIF.
+    ENDIF.
+
+  ENDMETHOD.
