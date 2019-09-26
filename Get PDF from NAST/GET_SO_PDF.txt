@@ -1,0 +1,74 @@
+  METHOD get_so_pdf.
+
+    DATA: lt_return TYPE bapiret2_t.
+
+    "log message
+    ycl_cs_eventgrid_api=>create_log(
+      EXPORTING
+        iv_external_id = CONV #( iv_vbeln )
+        iv_msgty = 'I'
+        iv_message = |PDF fetch started by user { sy-uname }|
+    ).
+
+    SELECT kappl,
+            kschl,
+            objky,
+            spras,
+            parnr,
+            parvw,
+            nacha,
+            tdcovtitle
+      INTO @DATA(ls_nast)
+      FROM nast
+      WHERE kappl = 'V1'
+      AND nacha = '8'   "special function
+      AND objky = @iv_vbeln.
+
+      ycl_cs_eventgrid_api=>generate_nast_pdf(
+        EXPORTING
+          application_area =     ls_nast-kappl
+          output_type      =     ls_nast-kschl
+          object_key       =     CONV #( ls_nast-objky )
+          spras            =     ls_nast-spras
+          parnr            =     ls_nast-parnr
+          parvw            =     ls_nast-parvw
+          no_dialog        =     abap_true
+          document_key     =     |{ ls_nast-objky }.pdf |
+        IMPORTING
+             xstring          =  DATA(lv_xstring)
+        CHANGING
+          return_t         =     lt_return ).
+      IF lv_xstring IS NOT INITIAL.
+        rv_file = lv_xstring.
+
+        "log message
+        ycl_cs_eventgrid_api=>create_log(
+          EXPORTING
+            iv_external_id = CONV #( iv_vbeln )
+            iv_msgty = 'I'
+            iv_message = |PDF fetch finished successfully by user { sy-uname }|
+        ).
+      ELSE.
+        READ TABLE lt_return ASSIGNING FIELD-SYMBOL(<fs_return>) WITH KEY type = 'E'.
+        IF sy-subrc EQ 0.
+          "log message
+          ycl_cs_eventgrid_api=>create_log( iv_external_id = CONV #( iv_vbeln ) iv_msgty = 'E' is_message_from_return = <fs_return> ).
+        ENDIF.
+
+      ENDIF.
+
+      EXIT.
+
+    ENDSELECT.
+
+    IF sy-subrc NE 0.
+      "log message
+      ycl_cs_eventgrid_api=>create_log(
+        EXPORTING
+          iv_external_id = CONV #( iv_vbeln )
+          iv_msgty = 'E'
+          iv_message = |Entry not found in NAST table|
+      ).
+    ENDIF.
+
+  ENDMETHOD.

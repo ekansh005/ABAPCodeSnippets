@@ -1,0 +1,189 @@
+  METHOD generate_nast_pdf.
+
+    DATA: spoolid       TYPE rspoid,
+          spool_rqident TYPE rqident,
+          lt_content    TYPE tline_t,
+          wa_nast       TYPE nast,
+          lt_msg_nast   TYPE TABLE OF msg0,
+          ls_msg0       TYPE msg0,
+          t_disp        TYPE TABLE OF naliv2,
+          nast          TYPE TABLE OF nast.
+
+    FIELD-SYMBOLS: <msg>      TYPE bapiret2.
+
+    TYPES: BEGIN OF tstamp,
+             date TYPE datum,
+             time TYPE uzeit,
+           END OF tstamp.
+
+*Fill nast
+
+    wa_nast-mandt = sy-mandt.
+    wa_nast-kappl  = application_area."Application area
+    wa_nast-objky  = object_key."object key
+    wa_nast-kschl  = output_type."output type to be processed
+    wa_nast-spras  = spras."language
+    wa_nast-parnr  = parnr."message partner
+    wa_nast-parvw  = parvw."partner function
+    wa_nast-erdat  = sy-datum."current date
+    wa_nast-eruhr  = sy-uzeit."current time
+    wa_nast-usnam = sy-uname. "user name
+    wa_nast-nacha  = '1'."message transmission medium
+    wa_nast-anzal  = '01'."number of messages
+    wa_nast-vsztp  = '4'."Dispatch time
+    wa_nast-vstat  = '0'."processing status
+    wa_nast-tdcovtitle = document_key."Document ID
+*    wa_nast-tcode  = 'ZND'."Communication strategy
+    wa_nast-dsnam  = document_key."spool name
+
+
+
+*Update NAST tab
+    CALL FUNCTION 'RV_MESSAGE_UPDATE_SINGLE'
+      EXPORTING
+        msg_nast = wa_nast.
+
+    IF sy-subrc <> 0.
+      APPEND INITIAL LINE TO return_t ASSIGNING <msg>.
+      <msg>-type = 'E'.
+      <msg>-id = 'YCS_SERVICE_DELIVERY'.
+      <msg>-number = 016.
+      <msg>-message_v1 = document_key.
+      MESSAGE ID <msg>-id TYPE <msg>-type NUMBER <msg>-number WITH <msg>-message_v1 INTO <msg>-message.
+      RETURN.
+    ENDIF.
+
+*Process output type
+    MOVE-CORRESPONDING wa_nast TO ls_msg0.
+    APPEND ls_msg0 TO lt_msg_nast.
+
+    CALL FUNCTION 'WFMC_MESSAGES_PROCESS'
+      EXPORTING
+        pi_display_id = 'NALIV2'
+        pi_no_dialog  = 'X'
+        pi_no_commit  = ' '
+      TABLES
+        tx_messages   = lt_msg_nast
+        tx_display    = t_disp.
+
+    IF sy-subrc <> 0.
+
+      APPEND INITIAL LINE TO return_t ASSIGNING <msg>.
+      <msg>-type = 'E'.
+      <msg>-id = 'YCS_SERVICE_DELIVERY'.
+      <msg>-number = 018.
+      <msg>-message_v1 = document_key.
+      MESSAGE ID <msg>-id TYPE <msg>-type NUMBER <msg>-number WITH  <msg>-message_v1 INTO <msg>-message.
+      RETURN.
+    ENDIF.
+
+    "the spool title is not getting updated so we aren't able to fetch spool by title
+*    SELECT  rqident
+*      FROM tsp01
+*      INTO spoolid
+*      WHERE rqowner EQ sy-uname
+*      AND rqtitle   EQ document_key
+*      ORDER BY PRIMARY KEY.
+*      EXIT.
+*    ENDSELECT.
+
+    "so now we are fetching CMFPNR from NAST and then check table CMFP with this number, from here we can get the spool number directly.
+    READ TABLE lt_msg_nast ASSIGNING FIELD-SYMBOL(<fs_msg_nast>) INDEX 1.
+    IF sy-subrc EQ 0.
+      SELECT msgv1
+        FROM cmfp
+        INTO @DATA(lv_msgv1)
+        WHERE nr EQ @<fs_msg_nast>-cmfpnr
+        AND arbgb EQ 'VN'
+        AND msgnr EQ '342'.
+        IF sy-subrc EQ 0.
+          EXIT.
+        ENDIF.
+      ENDSELECT.
+    ENDIF.
+    MOVE lv_msgv1 TO spoolid.
+    spool_rqident = spoolid.
+
+    IF sy-subrc <> 0 OR spoolid IS INITIAL.
+      APPEND INITIAL LINE TO return_t ASSIGNING <msg>.
+      <msg>-type = 'E'.
+      <msg>-id = 'YCS_SERVICE_DELIVERY'.
+      <msg>-number = 017.
+      <msg>-message_v1 = wa_nast-kschl.
+      <msg>-message_v2 = wa_nast-objky.
+      MESSAGE ID <msg>-id TYPE <msg>-type NUMBER <msg>-number WITH  <msg>-message_v1 INTO <msg>-message.
+      RETURN.
+    ENDIF.
+
+    "Get spool request content in a table form
+    CALL FUNCTION 'CONVERT_OTFSPOOLJOB_2_PDF'
+      EXPORTING
+        src_spoolid              = spoolid
+        no_dialog                = no_dialog
+      IMPORTING
+        pdf_bytecount            = bytecount
+      TABLES
+        pdf                      = lt_content
+      EXCEPTIONS
+        err_no_otf_spooljob      = 1
+        err_no_spooljob          = 2
+        err_no_permission        = 3
+        err_conv_not_possible    = 4
+        err_bad_dstdevice        = 5
+        user_cancelled           = 6
+        err_spoolerror           = 7
+        err_temseerror           = 8
+        err_btcjob_open_failed   = 9
+        err_btcjob_submit_failed = 10
+        err_btcjob_close_failed  = 11
+        OTHERS                   = 12.
+
+    IF sy-subrc <> 0.
+      CALL FUNCTION 'RSPO_R_RDELETE_SPOOLREQ'
+        EXPORTING
+          spoolid = spool_rqident.
+      APPEND INITIAL LINE TO return_t ASSIGNING <msg>.
+      CASE sy-subrc.
+        WHEN 3.
+          <msg>-number = 013.
+        WHEN 4.
+          <msg>-number = 015.
+        WHEN 7.
+          <msg>-number = 019.
+        WHEN OTHERS.
+          <msg>-number = 014.
+      ENDCASE.
+      <msg>-type = 'E'.
+      <msg>-id = 'YCS_SERVICE_DELIVERY'.
+      <msg>-message_v1 = document_key.
+      MESSAGE ID <msg>-id TYPE <msg>-type NUMBER <msg>-number WITH <msg>-message_v1 INTO <msg>-message.
+      RETURN.
+    ENDIF.
+    "Convert table content into raw string
+    CALL FUNCTION 'HR_JP_CONV_TAB_TO_CP_XSTR'
+      IMPORTING
+        ev_xstring_stream  = xstring
+      TABLES
+        it_datatab         = lt_content[]
+      EXCEPTIONS
+        invalid_codepage   = 1
+        no_data_to_convert = 2.
+
+    IF sy-subrc EQ 0.
+
+    ELSE.
+      APPEND INITIAL LINE TO return_t ASSIGNING <msg>.
+      <msg>-type = 'E'.
+      <msg>-id = 'YCS_SERVICE_DELIVERY'.
+      <msg>-number = 015.
+      <msg>-message_v1 = document_key.
+      MESSAGE ID <msg>-id TYPE <msg>-type NUMBER <msg>-number WITH <msg>-message_v1 INTO <msg>-message.
+    ENDIF.
+
+    "now we are done with spool so let's delete it
+    CALL FUNCTION 'RSPO_R_RDELETE_SPOOLREQ'
+      EXPORTING
+        spoolid = spool_rqident.
+
+
+  ENDMETHOD.
