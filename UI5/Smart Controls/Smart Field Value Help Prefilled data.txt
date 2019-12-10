@@ -1,0 +1,5 @@
+<smartField:SmartField value="{Material}" change="onChangeMaterial">
+    <smartField:configuration>
+        <smartField:Configuration preventInitialDataFetchInValueHelpDialog="false"></smartField:Configuration>
+    </smartField:configuration>
+</smartField:SmartField>

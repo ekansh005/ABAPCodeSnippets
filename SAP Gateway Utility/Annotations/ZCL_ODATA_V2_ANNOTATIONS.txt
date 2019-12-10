@@ -1,0 +1,560 @@
+class ZCL_ODATA_V2_ANNOTATIONS definition
+  public
+  final
+  create public .
+
+public section.
+
+  methods CONSTRUCTOR
+    importing
+      !IM_MODEL type ref to /IWBEP/IF_MGW_ODATA_MODEL
+      !IM_VOCAB_ANNO_MODEL type ref to /IWBEP/IF_MGW_VOCAN_MODEL
+      !IM_SERVICE_NAME type STRING .
+  methods SET_FILTERABLE
+    importing
+      !IM_ENTITY type /IWBEP/MED_EXTERNAL_NAME
+      !IM_PROPERTIES type STRING
+      !IM_VALUE type BOOLEAN default ABAP_FALSE
+    raising
+      /IWBEP/CX_MGW_MED_EXCEPTION .
+  methods SET_UPDATEABLE
+    importing
+      !IM_ENTITY type /IWBEP/MED_EXTERNAL_NAME
+      !IM_PROPERTIES type STRING
+      !IM_VALUE type BOOLEAN default ABAP_FALSE
+    raising
+      /IWBEP/CX_MGW_MED_EXCEPTION .
+  methods SET_SORTABLE
+    importing
+      !IM_ENTITY type /IWBEP/MED_EXTERNAL_NAME
+      !IM_PROPERTIES type STRING
+      !IM_VALUE type BOOLEAN default ABAP_FALSE .
+  methods SET_DISPLAY_FORMAT
+    importing
+      !IM_ENTITY type /IWBEP/MED_EXTERNAL_NAME
+      !IM_PROPERTIES type STRING
+      !IM_VALUE type /IWBEP/MED_ANNOTATION_VALUE
+    raising
+      /IWBEP/CX_MGW_MED_EXCEPTION .
+  methods SET_AS_DROPDOWN
+    importing
+      !IM_ENTITY_SET type /IWBEP/MED_EXTERNAL_NAME
+      !IM_ENTITY type /IWBEP/MED_EXTERNAL_NAME
+      !IM_PROPERTY_KEY type /IWBEP/MED_EXTERNAL_NAME
+      !IM_PROPERTY_DESC type /IWBEP/MED_ANNOTATION_VALUE
+    raising
+      /IWBEP/CX_MGW_MED_EXCEPTION .
+  methods SET_AS_TEXT
+    importing
+      !IM_ENTITY type /IWBEP/MED_EXTERNAL_NAME
+      !IM_PROPERTY_KEY type /IWBEP/MED_EXTERNAL_NAME
+      !IM_PROPERTY_DESC type /IWBEP/MED_ANNOTATION_VALUE
+    raising
+      /IWBEP/CX_MGW_MED_EXCEPTION .
+  methods SET_AS_MEDIA
+    importing
+      !IM_ENTITY type /IWBEP/MED_EXTERNAL_NAME
+      !IM_PROPERTY_MIMETYPE type /IWBEP/MED_EXTERNAL_NAME
+    raising
+      /IWBEP/CX_MGW_MED_EXCEPTION .
+  methods SET_AS_EMAIL
+    importing
+      !IM_ENTITY type /IWBEP/MED_EXTERNAL_NAME
+      !IM_PROPERTIES type STRING
+    raising
+      /IWBEP/CX_MGW_MED_EXCEPTION .
+  methods SET_AS_AGGREGATE
+    importing
+      !IM_ENTITY type /IWBEP/MED_EXTERNAL_NAME
+    raising
+      /IWBEP/CX_MGW_MED_EXCEPTION .
+  methods SET_AS_UNIT
+    importing
+      !IM_ENTITY type /IWBEP/MED_EXTERNAL_NAME
+      !IM_PROPERTIES type STRING
+      !IM_PROPERTY_UNIT type /IWBEP/MED_ANNOTATION_VALUE
+    exceptions
+      /IWBEP/CX_MGW_MED_EXCEPTION .
+  methods SET_CREATABLE
+    importing
+      !IM_ENTITY type /IWBEP/MED_EXTERNAL_NAME
+      !IM_PROPERTIES type STRING
+      !IM_VALUE type BOOLEAN default ABAP_TRUE
+    raising
+      /IWBEP/CX_MGW_MED_EXCEPTION .
+  methods SET_LABEL
+    importing
+      !IM_ENTITY type /IWBEP/MED_EXTERNAL_NAME
+      !IM_PROPERTY type /IWBEP/MED_EXTERNAL_NAME
+      !IM_LABEL type /IWBEP/MED_ANNOTATION_VALUE
+    raising
+      /IWBEP/CX_MGW_MED_EXCEPTION .
+protected section.
+private section.
+
+  data GV_MODEL type ref to /IWBEP/IF_MGW_ODATA_MODEL .
+  constants GC_SAP type /IWBEP/MED_ANNO_NAMESPACE value 'sap' ##NO_TEXT.
+  constants GC_DISPLAY_FORMAT type /IWBEP/MED_ANNOTATION_KEY value 'display-format' ##NO_TEXT.
+  constants GC_SEMANTICS type /IWBEP/MED_ANNOTATION_KEY value 'semantics' ##NO_TEXT.
+  constants GC_FIXED_VALUES type /IWBEP/MED_ANNOTATION_VALUE value 'fixed-values' ##NO_TEXT.
+  constants GC_TEXT type /IWBEP/MED_ANNOTATION_KEY value 'text' ##NO_TEXT.
+  constants GC_EMAIL type /IWBEP/MED_ANNOTATION_VALUE value 'email' ##NO_TEXT.
+  constants GC_AGGREGATE type /IWBEP/MED_ANNOTATION_VALUE value 'aggregate' ##NO_TEXT.
+  constants GC_UNIT type /IWBEP/MED_ANNOTATION_KEY value 'unit' ##NO_TEXT.
+  data GV_VOCAB_ANNO_MODEL type ref to /IWBEP/IF_MGW_VOCAN_MODEL .
+  data GV_REFERENCE_COMMON type ref to /IWBEP/IF_MGW_VOCAN_REFERENCE .
+  data GV_ANNOTATION type ref to /IWBEP/IF_MGW_VOCAN_ANNOTATION .
+  data GV_ANNOTATION_TARGET type ref to /IWBEP/IF_MGW_VOCAN_ANN_TARGET .
+  data GV_SIMPLE_VALUE type ref to /IWBEP/IF_MGW_VOCAN_SIMPLE_VAL .
+  data GV_SERVICE_NAME type STRING .
+ENDCLASS.
+
+
+
+CLASS ZCL_ODATA_V2_ANNOTATIONS IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_ODATA_V2_ANNOTATIONS->CONSTRUCTOR
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IM_MODEL                       TYPE REF TO /IWBEP/IF_MGW_ODATA_MODEL
+* | [--->] IM_VOCAB_ANNO_MODEL            TYPE REF TO /IWBEP/IF_MGW_VOCAN_MODEL
+* | [--->] IM_SERVICE_NAME                TYPE        STRING
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD constructor.
+*---------------------------------------------------------------------*
+* Class for creating all OData v2 annotations                         *
+* For a complete list of annotations, check the next Link             *
+* https://wiki.scn.sap.com/wiki/display/EmTech/SAP+Annotations+for+OData+Version+2.0
+*---------------------------------------------------------------------*
+    gv_model = im_model.
+    gv_vocab_anno_model = im_vocab_anno_model.
+    gv_service_name = im_service_name.
+
+    gv_reference_common = gv_vocab_anno_model->create_vocabulary_reference( iv_vocab_id = '/IWBEP/VOC_COMMON' iv_vocab_version = '0001').
+    gv_reference_common->create_include( iv_namespace = 'com.sap.vocabularies.Common.v1' iv_alias = 'Common' ).
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_ODATA_V2_ANNOTATIONS->SET_AS_AGGREGATE
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IM_ENTITY                      TYPE        /IWBEP/MED_EXTERNAL_NAME
+* | [!CX!] /IWBEP/CX_MGW_MED_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method set_as_aggregate.
+*---------------------------------------------------------------------*
+* Method to set as Aggrgate one entity Type                           *
+*---------------------------------------------------------------------*
+
+    data: lv_o_entity_type type ref to /iwbep/if_mgw_odata_entity_typ,
+          lv_o_annotation  type ref to /iwbep/if_mgw_odata_annotation.
+
+    lv_o_entity_type = gv_model->get_entity_type( im_entity ).
+    if lv_o_entity_type is bound.
+      lv_o_annotation = lv_o_entity_type->/iwbep/if_mgw_odata_annotatabl~create_annotation( gc_sap ).
+      lv_o_annotation->add( iv_key = gc_semantics iv_value = gc_aggregate ).
+    endif.
+
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_ODATA_V2_ANNOTATIONS->SET_AS_DROPDOWN
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IM_ENTITY_SET                  TYPE        /IWBEP/MED_EXTERNAL_NAME
+* | [--->] IM_ENTITY                      TYPE        /IWBEP/MED_EXTERNAL_NAME
+* | [--->] IM_PROPERTY_KEY                TYPE        /IWBEP/MED_EXTERNAL_NAME
+* | [--->] IM_PROPERTY_DESC               TYPE        /IWBEP/MED_ANNOTATION_VALUE
+* | [!CX!] /IWBEP/CX_MGW_MED_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method set_as_dropdown.
+*---------------------------------------------------------------------*
+* Method to set sap:SEMANTICS = FIXED-VALUES annotation to one entity *
+* If we also pass te Optional parameters, we will define the text for *
+* the key of the entity                                               *
+*---------------------------------------------------------------------*
+    data: lv_o_entity_type type ref to /iwbep/if_mgw_odata_entity_typ,
+          lv_o_property    type ref to /iwbep/cl_mgw_odata_property,
+          lv_o_annotation  type ref to /iwbep/if_mgw_odata_annotation,
+          lv_o_entity_set  type ref to /iwbep/if_mgw_odata_entity_set.
+
+    lv_o_entity_set = gv_model->get_entity_set( iv_entity_set_name = im_entity_set ).
+    if lv_o_entity_set is bound.
+      lv_o_annotation = lv_o_entity_set->create_annotation( gc_sap ).
+      lv_o_annotation->add( iv_key = gc_semantics iv_value = gc_fixed_values ).
+    endif.
+
+    if im_entity is not initial
+       and  im_property_key is not initial
+       and im_property_desc is not initial.
+
+      me->set_as_text(
+        exporting
+          im_entity                   = im_entity           " Entity Type
+          im_property_key             = im_property_key     " Property Key
+          im_property_desc            = im_property_desc    " Property Description
+      ).
+
+    endif.
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_ODATA_V2_ANNOTATIONS->SET_AS_EMAIL
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IM_ENTITY                      TYPE        /IWBEP/MED_EXTERNAL_NAME
+* | [--->] IM_PROPERTIES                  TYPE        STRING
+* | [!CX!] /IWBEP/CX_MGW_MED_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method set_as_email.
+*---------------------------------------------------------------------*
+* Method to set one or multiple properties of an entity as Email type *
+*---------------------------------------------------------------------*
+
+    data: lv_o_entity_type type ref to /iwbep/if_mgw_odata_entity_typ,
+          lv_o_property    type ref to /iwbep/cl_mgw_odata_property,
+          lv_o_annotation  type ref to /iwbep/if_mgw_odata_annotation,
+          lv_o_entity_set  type ref to /iwbep/if_mgw_odata_entity_set,
+          lit_property    type table of /iwbep/med_external_name.
+
+    lv_o_entity_type = gv_model->get_entity_type( iv_entity_name = im_entity ).
+
+    if lv_o_entity_type is bound.
+
+      split im_properties at ',' into table lit_property.
+
+      loop at lit_property assigning field-symbol(<lfs_property>).
+        clear: lv_o_property, lv_o_annotation.
+        lv_o_property ?= lv_o_entity_type->get_property( <lfs_property> ).
+        if lv_o_property is bound.
+          lv_o_annotation = lv_o_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( gc_sap ).
+          lv_o_annotation->add( iv_key = gc_semantics iv_value = gc_email ).
+        endif.
+      endloop.
+    endif.
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_ODATA_V2_ANNOTATIONS->SET_AS_MEDIA
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IM_ENTITY                      TYPE        /IWBEP/MED_EXTERNAL_NAME
+* | [--->] IM_PROPERTY_MIMETYPE           TYPE        /IWBEP/MED_EXTERNAL_NAME
+* | [!CX!] /IWBEP/CX_MGW_MED_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method set_as_media.
+*---------------------------------------------------------------------*
+* Method to set as Media one entity Type                              *
+*---------------------------------------------------------------------*
+
+    data: lv_o_entity_type type ref to /iwbep/if_mgw_odata_entity_typ.
+
+    lv_o_entity_type = gv_model->get_entity_type( im_entity ).
+    if lv_o_entity_type is bound.
+      lv_o_entity_type->set_is_media( abap_true ).
+      lv_o_entity_type->get_property( im_property_mimetype )->set_as_content_type( ).
+    endif.
+
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_ODATA_V2_ANNOTATIONS->SET_AS_TEXT
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IM_ENTITY                      TYPE        /IWBEP/MED_EXTERNAL_NAME
+* | [--->] IM_PROPERTY_KEY                TYPE        /IWBEP/MED_EXTERNAL_NAME
+* | [--->] IM_PROPERTY_DESC               TYPE        /IWBEP/MED_ANNOTATION_VALUE
+* | [!CX!] /IWBEP/CX_MGW_MED_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method set_as_text.
+*---------------------------------------------------------------------*
+* Method to set sap:TEXT = Property annotation to one property        *
+*---------------------------------------------------------------------*
+    data: lv_o_entity_type type ref to /iwbep/if_mgw_odata_entity_typ,
+          lv_o_property    type ref to /iwbep/cl_mgw_odata_property,
+          lv_o_annotation  type ref to /iwbep/if_mgw_odata_annotation,
+          lv_o_entity_set  type ref to /iwbep/if_mgw_odata_entity_set.
+
+    lv_o_entity_type = gv_model->get_entity_type( iv_entity_name = im_entity ).
+    if lv_o_entity_type is bound.
+      "For this property (dropdown value), we define its "Description"
+      lv_o_property ?= lv_o_entity_type->get_property( im_property_key ).
+      lv_o_annotation = lv_o_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( gc_sap ).
+      lv_o_annotation->add( iv_key = gc_text iv_value = im_property_desc ).
+    endif.
+
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_ODATA_V2_ANNOTATIONS->SET_AS_UNIT
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IM_ENTITY                      TYPE        /IWBEP/MED_EXTERNAL_NAME
+* | [--->] IM_PROPERTIES                  TYPE        STRING
+* | [--->] IM_PROPERTY_UNIT               TYPE        /IWBEP/MED_ANNOTATION_VALUE
+* | [EXC!] /IWBEP/CX_MGW_MED_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD set_as_unit.
+*---------------------------------------------------------------------*
+* Method to set annotation sap:UNIT = Property Unit to one or multiple*
+* properties of a given entity type                                   *
+*---------------------------------------------------------------------*
+    DATA: lv_o_entity_type TYPE REF TO /iwbep/if_mgw_odata_entity_typ,
+          lv_o_property    TYPE REF TO /iwbep/cl_mgw_odata_property,
+          lv_o_annotation  TYPE REF TO /iwbep/if_mgw_odata_annotation,
+          lv_o_entity_set  TYPE REF TO /iwbep/if_mgw_odata_entity_set,
+          lit_property    TYPE TABLE OF /iwbep/med_external_name.
+
+    SPLIT im_properties AT ',' INTO TABLE lit_property.
+    TRY.
+        lv_o_entity_type = gv_model->get_entity_type( iv_entity_name = im_entity ).
+      CATCH /iwbep/cx_mgw_med_exception.
+    ENDTRY.
+    IF lv_o_entity_type IS BOUND.
+      LOOP AT lit_property ASSIGNING FIELD-SYMBOL(<lfs_property>).
+        TRY .
+            lv_o_property ?= lv_o_entity_type->get_property( <lfs_property> ).
+            lv_o_annotation = lv_o_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( gc_sap ).
+            lv_o_annotation->add( iv_key = gc_unit iv_value = im_property_unit ).
+          CATCH /iwbep/cx_mgw_med_exception.
+
+        ENDTRY.
+
+      ENDLOOP.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_ODATA_V2_ANNOTATIONS->SET_CREATABLE
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IM_ENTITY                      TYPE        /IWBEP/MED_EXTERNAL_NAME
+* | [--->] IM_PROPERTIES                  TYPE        STRING
+* | [--->] IM_VALUE                       TYPE        BOOLEAN (default =ABAP_TRUE)
+* | [!CX!] /IWBEP/CX_MGW_MED_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method SET_CREATABLE.
+*---------------------------------------------------------------------*
+* Method to set sap:CREATABLE annotation to one or multiple fields   *
+* of a given entity type                                              *
+* There are currently two possible values:                            *
+*     -ABAP_TRUE                                                      *
+*     -ABAP_FALSE                                                     *
+*---------------------------------------------------------------------*
+
+    data: lv_o_entity_type type ref to /iwbep/if_mgw_odata_entity_typ,
+          lv_o_property    type ref to /iwbep/cl_mgw_odata_property,
+          lv_o_annotation  type ref to /iwbep/if_mgw_odata_annotation,
+          lit_property    type table of /iwbep/med_external_name.
+
+    lv_o_entity_type = gv_model->get_entity_type( iv_entity_name = im_entity ).
+
+    if lv_o_entity_type is bound.
+
+      split im_properties at ',' into table lit_property.
+
+      loop at lit_property assigning field-symbol(<lfs_property>).
+        clear: lv_o_property, lv_o_annotation.
+        lv_o_property ?= lv_o_entity_type->get_property( <lfs_property> ).
+        if lv_o_property is bound.
+          lv_o_property->/iwbep/if_mgw_odata_property~set_creatable( im_value ).
+        endif.
+      endloop.
+    endif.
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_ODATA_V2_ANNOTATIONS->SET_DISPLAY_FORMAT
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IM_ENTITY                      TYPE        /IWBEP/MED_EXTERNAL_NAME
+* | [--->] IM_PROPERTIES                  TYPE        STRING
+* | [--->] IM_VALUE                       TYPE        /IWBEP/MED_ANNOTATION_VALUE
+* | [!CX!] /IWBEP/CX_MGW_MED_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method set_display_format.
+*---------------------------------------------------------------------*
+* Method to set sap:DISPLAY-FORMAT annotation to one or multiple      *
+* properties of a given entity type                                   *
+* There are currently three possible values:
+*     -'Date' indicates that only the date part of an Edm.DateTime value is relevant
+*     -'NonNegative' indicates that only non-negative numeric values are provided and persisted, other input will lead to errors.
+*   Intended for Edm.String fields that are internally stored as NUMC
+*     -'UpperCase' indicates that uppercase values are provided and persisted, lowercase input will be converted
+*---------------------------------------------------------------------*
+
+    data: lv_o_entity_type type ref to /iwbep/if_mgw_odata_entity_typ,
+          lv_o_property    type ref to /iwbep/cl_mgw_odata_property,
+          lv_o_annotation  type ref to /iwbep/if_mgw_odata_annotation,
+          lit_property    type table of /iwbep/med_external_name.
+
+    lv_o_entity_type = gv_model->get_entity_type( iv_entity_name = im_entity ).
+
+    if lv_o_entity_type is bound.
+
+      split im_properties at ',' into table lit_property.
+
+      loop at lit_property assigning field-symbol(<lfs_property>).
+        clear: lv_o_property, lv_o_annotation.
+        lv_o_property ?= lv_o_entity_type->get_property( <lfs_property> ).
+        if lv_o_property is bound.
+          lv_o_annotation = lv_o_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( gc_sap ).
+          lv_o_annotation->add( iv_key = gc_display_format iv_value = im_value ).
+        endif.
+      endloop.
+    endif.
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_ODATA_V2_ANNOTATIONS->SET_FILTERABLE
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IM_ENTITY                      TYPE        /IWBEP/MED_EXTERNAL_NAME
+* | [--->] IM_PROPERTIES                  TYPE        STRING
+* | [--->] IM_VALUE                       TYPE        BOOLEAN (default =ABAP_FALSE)
+* | [!CX!] /IWBEP/CX_MGW_MED_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method set_filterable.
+*---------------------------------------------------------------------*
+* Method to set sap:FILTERABLE annotation to one or multiple fields   *
+* of a given entity type                                              *
+* There are currently two possible values:                            *
+*     -ABAP_TRUE                                                      *
+*     -ABAP_FALSE                                                     *
+*---------------------------------------------------------------------*
+
+    data: lv_o_entity_type type ref to /iwbep/if_mgw_odata_entity_typ,
+          lv_o_property    type ref to /iwbep/cl_mgw_odata_property,
+          lv_o_annotation  type ref to /iwbep/if_mgw_odata_annotation,
+          lit_property    type table of /iwbep/med_external_name.
+
+    lv_o_entity_type = gv_model->get_entity_type( iv_entity_name = im_entity ).
+
+    if lv_o_entity_type is bound.
+
+      split im_properties at ',' into table lit_property.
+
+      loop at lit_property assigning field-symbol(<lfs_property>).
+        clear: lv_o_property, lv_o_annotation.
+        lv_o_property ?= lv_o_entity_type->get_property( <lfs_property> ).
+        if lv_o_property is bound.
+          lv_o_property->/iwbep/if_mgw_odata_property~set_filterable( im_value ).
+        endif.
+      endloop.
+    endif.
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_ODATA_V2_ANNOTATIONS->SET_LABEL
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IM_ENTITY                      TYPE        /IWBEP/MED_EXTERNAL_NAME
+* | [--->] IM_PROPERTY                    TYPE        /IWBEP/MED_EXTERNAL_NAME
+* | [--->] IM_LABEL                       TYPE        /IWBEP/MED_ANNOTATION_VALUE
+* | [!CX!] /IWBEP/CX_MGW_MED_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD set_label.
+*---------------------------------------------------------------------*
+* Method to set sap:label = text label        *
+*---------------------------------------------------------------------*
+    DATA: lv_o_entity_type TYPE REF TO /iwbep/if_mgw_odata_entity_typ,
+          lv_o_property    TYPE REF TO /iwbep/cl_mgw_odata_property,
+          lv_o_annotation  TYPE REF TO /iwbep/if_mgw_odata_annotation,
+          lv_o_entity_set  TYPE REF TO /iwbep/if_mgw_odata_entity_set.
+
+    lv_o_entity_type = gv_model->get_entity_type( iv_entity_name = im_entity ).
+    IF lv_o_entity_type IS BOUND.
+      lv_o_property ?= lv_o_entity_type->get_property( im_property ).
+*      lv_o_annotation = lv_o_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( gc_sap ).
+*      lv_o_annotation->add( iv_key = 'label' iv_value = iv_label ).
+    ENDIF.
+
+    gv_annotation_target = gv_vocab_anno_model->create_annotations_target( |{ im_entity }/{ im_property }| ).
+    gv_annotation_target->set_namespace_qualifier( gv_service_name ).
+
+    gv_annotation = gv_annotation_target->create_annotation( 'Common.Label' ).
+    gv_simple_value = gv_annotation->create_simple_value( ).
+    gv_simple_value->set_string( im_label ).
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_ODATA_V2_ANNOTATIONS->SET_SORTABLE
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IM_ENTITY                      TYPE        /IWBEP/MED_EXTERNAL_NAME
+* | [--->] IM_PROPERTIES                  TYPE        STRING
+* | [--->] IM_VALUE                       TYPE        BOOLEAN (default =ABAP_FALSE)
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method set_sortable.
+*---------------------------------------------------------------------*
+* Method to set sap:SORTABLE annotation to one or multiple fields   *
+* of a given entity type                                              *
+* There are currently two possible values:                            *
+*     -ABAP_TRUE                                                      *
+*     -ABAP_FALSE                                                     *
+*---------------------------------------------------------------------*
+
+    data: lv_o_entity_type type ref to /iwbep/if_mgw_odata_entity_typ,
+          lv_o_property    type ref to /iwbep/cl_mgw_odata_property,
+          lv_o_annotation  type ref to /iwbep/if_mgw_odata_annotation,
+          lit_property     type table of /iwbep/med_external_name.
+
+    lv_o_entity_type = gv_model->get_entity_type( iv_entity_name = im_entity ).
+
+    if lv_o_entity_type is bound.
+
+      split im_properties at ',' into table lit_property.
+
+      loop at lit_property assigning field-symbol(<lfs_property>).
+        clear: lv_o_property, lv_o_annotation.
+        lv_o_property ?= lv_o_entity_type->get_property( <lfs_property> ).
+        if lv_o_property is bound.
+          lv_o_property->/iwbep/if_mgw_odata_property~set_sortable( im_value ).
+        endif.
+      endloop.
+    endif.
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_ODATA_V2_ANNOTATIONS->SET_UPDATEABLE
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IM_ENTITY                      TYPE        /IWBEP/MED_EXTERNAL_NAME
+* | [--->] IM_PROPERTIES                  TYPE        STRING
+* | [--->] IM_VALUE                       TYPE        BOOLEAN (default =ABAP_FALSE)
+* | [!CX!] /IWBEP/CX_MGW_MED_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method set_updateable.
+*---------------------------------------------------------------------*
+* Method to set sap:UPDATEABLE annotation to one or multiple fields   *
+* of a given entity type                                              *
+* There are currently two possible values:                            *
+*     -ABAP_TRUE                                                      *
+*     -ABAP_FALSE                                                     *
+*---------------------------------------------------------------------*
+
+    data: lv_o_entity_type type ref to /iwbep/if_mgw_odata_entity_typ,
+          lv_o_property    type ref to /iwbep/cl_mgw_odata_property,
+          lv_o_annotation  type ref to /iwbep/if_mgw_odata_annotation,
+          lit_property    type table of /iwbep/med_external_name.
+
+    lv_o_entity_type = gv_model->get_entity_type( iv_entity_name = im_entity ).
+
+    if lv_o_entity_type is bound.
+
+      split im_properties at ',' into table lit_property.
+
+      loop at lit_property assigning field-symbol(<lfs_property>).
+        clear: lv_o_property, lv_o_annotation.
+        lv_o_property ?= lv_o_entity_type->get_property( <lfs_property> ).
+        if lv_o_property is bound.
+          lv_o_property->/iwbep/if_mgw_odata_property~set_updatable( im_value ).
+        endif.
+      endloop.
+    endif.
+  endmethod.
+ENDCLASS.

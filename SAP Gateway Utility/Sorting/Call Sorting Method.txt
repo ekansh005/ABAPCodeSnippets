@@ -1,0 +1,3 @@
+    DATA(lt_order) = io_tech_request_context->get_orderby( ).
+    "sort data as per optional orderby in odata call URL
+    zcl_odata_v2_helper=>handle_sorting( EXPORTING im_it_orderby = lt_order CHANGING ch_ct_table = et_entityset ).

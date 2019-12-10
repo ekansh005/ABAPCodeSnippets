@@ -1,0 +1,55 @@
+  method GET_STRING_FOR_TEXTID.
+
+* Use this method to read select text element and convert it to string.
+
+    data lv_tdid     type tdid.
+    data lv_tdname   type tdobname.
+    data lv_object   type tdobject.
+    data lv_langu    type spras value 'E'.
+    data lt_tlines   type standard table of tline.
+
+    clear ev_string.
+
+    lv_tdid   = iv_tdid.
+    lv_tdname = iv_tdname.
+    lv_object = iv_object.
+
+*   Check that all key fields are filled
+    check lv_tdid     is not initial.
+    check lv_tdname   is not initial.
+    check lv_object   is not initial.
+
+
+    call function 'READ_TEXT'
+      exporting
+        id                      = lv_tdid
+        language                = lv_langu
+        name                    = lv_tdname
+        object                  = lv_object
+      tables
+        lines                   = lt_tlines
+      exceptions
+        id                      = 1
+        language                = 2
+        name                    = 3
+        not_found               = 4
+        object                  = 5
+        reference_check         = 6
+        wrong_access_to_archive = 7
+        others                  = 8.
+
+    if sy-subrc ne 0.
+      return.
+    endif.
+
+    if lt_tlines[] is initial.
+      return.
+    endif.
+
+    call function 'IDMX_DI_TLINE_INTO_STRING'
+      exporting
+        it_tline       = lt_tlines
+      importing
+        ev_text_string = ev_string.
+
+  endmethod.

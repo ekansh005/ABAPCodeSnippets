@@ -1,0 +1,4 @@
+showTablePersonalisation="{detailView>/displayMode}"
+
+
+app:p13nDialogSettings="{columns:{visible:true}}"

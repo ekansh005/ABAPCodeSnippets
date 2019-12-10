@@ -1,0 +1,28 @@
+  METHOD handle_sorting.
+
+    DATA: lt_sorter  TYPE abap_sortorder_tab,
+          ls_sorter  TYPE abap_sortorder,
+          ls_orderby TYPE /iwbep/s_mgw_tech_order.
+
+    CHECK im_it_orderby IS NOT INITIAL.
+
+*  fill sorting table
+*  ----------------------------------------------------------------------------
+    LOOP AT im_it_orderby INTO ls_orderby.
+      ls_sorter-name = ls_orderby-property.
+
+      CASE ls_orderby-order.
+        WHEN 'desc'.
+          ls_sorter-descending = abap_true.
+        WHEN OTHERS.
+          ls_sorter-descending = abap_false.
+      ENDCASE.
+
+      APPEND ls_sorter TO lt_sorter.
+    ENDLOOP.
+
+*  execute sort
+*  ----------------------------------------------------------------------------
+    SORT ch_ct_table BY (lt_sorter).
+
+  ENDMETHOD.

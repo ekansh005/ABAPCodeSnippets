@@ -1,0 +1,2 @@
+    "finally paginate this data, it is important that pagination occurs at the end
+    /iwbep/cl_mgw_data_util=>paging( EXPORTING is_paging = is_paging CHANGING ct_data = et_entityset ).

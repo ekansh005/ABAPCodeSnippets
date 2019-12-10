@@ -1,0 +1,220 @@
+  METHOD define.
+
+    DATA : lo_odata TYPE REF TO zcl_odata_v2_annotations.
+
+    super->define( ).
+
+    CREATE OBJECT lo_odata
+      EXPORTING
+        im_model            = model
+        im_vocab_anno_model = vocab_anno_model
+        im_service_name     = 'Z_MY_SERVICE'.
+
+*--------------------------------- sap:filterable ---------------------------------*
+    lo_odata->set_filterable(
+      EXPORTING
+        im_entity                   = 'MyEntity'            " Entity Type
+        im_properties               = 'FilterProperty1,FilterProperty2'  " List of properties of the entity separated by ','
+        im_value                    = abap_false            " Value for Annotation (Boolean)
+    ).
+
+    lo_odata->set_filterable(
+      EXPORTING
+        im_entity                   = 'HT001w'            " Entity Type
+        im_properties               = 'Name1,City1' " List of properties of the entity separated by ','
+        im_value                    = abap_false            " Value for Annotation (Boolean)
+    ).
+
+
+    lo_odata->set_filterable(
+      EXPORTING
+        im_entity                   = 'SxUser'            " Entity Type
+        im_properties               = 'NameText' " List of properties of the entity separated by ','
+        im_value                    = abap_false            " Value for Annotation (Boolean)
+    ).
+*--------------------------------- sap:filterable ---------------------------------*
+*                                                                                  *
+*                                                                                  *
+*--------------------------------- sap:updateable ---------------------------------*
+    lo_odata->set_updateable(
+      EXPORTING
+        im_entity                   = 'MyEntity'            " Entity Type
+        im_properties               = 'CreatedOn,ChangedOn,SentOn,CreatedBy,ChangedBy'  " List of properties of the entity separated by ','
+        im_value                    = abap_false            " Value for Annotation (Boolean)
+    ).
+
+    lo_odata->set_updateable(
+       EXPORTING
+         im_entity                   = 'MyEntityItem'            " Entity Type
+         im_properties               = 'MyEntityID,Material,MaterialRev,MaterialDesc'  " List of properties of the entity separated by ','
+         im_value                    = abap_false            " Value for Annotation (Boolean)
+     ).
+
+
+    lo_odata->set_updateable(
+      EXPORTING
+        im_entity                   = 'MyEntityItem'            " Entity Type
+        im_properties               = 'Property1,VendorMaterial'  " List of properties of the entity    separated by ','
+        im_value                    = abap_false            " Value for Annotation (Boolean)
+    ).
+
+    lo_odata->set_updateable(
+       EXPORTING
+         im_entity                   = 'MyEntityItem'            " Entity Type
+         im_properties               = 'Property1,Property2  " List of properties of the entity separated by ','
+         im_value                    = abap_false            " Value for Annotation (Boolean)
+     ).
+
+
+
+*--------------------------------- sap:updateable ---------------------------------*
+*                                                                                  *
+*                                                                                  *
+*--------------------------------- sap:creatable ---------------------------------*
+    lo_odata->set_creatable(
+      EXPORTING
+        im_entity                   = 'MyEntityItem'            " Entity Type
+        im_properties               = 'Material,Plant,Uom'  " List of properties of the entity separated by ','
+    ).
+*--------------------------------- sap:updateable ---------------------------------*
+*                                                                                  *
+*                                                                                  *
+*------------------------------- sap:display-format -------------------------------*
+    lo_odata->set_display_format(
+      EXPORTING
+        im_entity                   = 'MyEntity'            " Entity Type
+        im_properties               = 'ChangedOn,SentOn,OpenedOn,ClosedOn,CreatedOn'  " List of properties of the entity separated by ','
+        im_value                    = 'Date'                " Value for display-format
+    ).
+
+    lo_odata->set_display_format(
+      EXPORTING
+        im_entity                   = 'MyEntityItem'        " Entity Type
+        im_properties               = 'LastPoDate'          " List of properties of the entity separated by ','
+        im_value                    = 'Date'                " Value for display-format
+    ).
+*------------------------------- sap:display-format -------------------------------*
+*                                                                                  *
+*                                                                                  *
+*------------------------------------ sap:text ------------------------------------*
+    lo_odata->set_as_text(
+      EXPORTING
+        im_entity                   = 'MyEntity'            " Entity Type
+        im_property_key             = 'Vendor'            " Property Key
+        im_property_desc            = 'VendorName'          " Property Description
+    ).
+
+    lo_odata->set_as_text(
+      EXPORTING
+        im_entity                   = 'MyEntityItem'        " Entity Type
+        im_property_key             = 'Material'            " Property Key
+        im_property_desc            = 'MaterialDesc'        " Property Description
+    ).
+
+    lo_odata->set_as_text(
+      EXPORTING
+        im_entity                   = 'MyEntity'        " Entity Type
+        im_property_key             = 'CreatedBy'            " Property Key
+        im_property_desc            = 'CreatedByName'        " Property Description
+    ).
+*------------------------------------ sap:text ------------------------------------*
+*                                                                                  *
+*                                                                                  *
+*------------------------- sap:semantics = 'fixed-values' -------------------------*
+    lo_odata->set_as_dropdown(
+      EXPORTING
+        im_entity_set               = 'SendMethodSet'       " Entity Set
+        im_entity                   = 'SendMethod'          " ( Optional ) Entity Type
+        im_property_key             = 'DomvalueL'           " ( Optional ) Property Key
+        im_property_desc            = 'Ddtext'              " ( Optional ) Property Description
+    ).
+
+    lo_odata->set_as_dropdown(
+      EXPORTING
+        im_entity_set               = 'StatusSet'           " Entity Set
+        im_entity                   = 'Status'              " ( Optional ) Entity Type
+        im_property_key             = 'DomvalueL'           " ( Optional ) Property Key
+        im_property_desc            = 'Ddtext'              " ( Optional ) Property Description
+    ).
+*------------------------- sap:semantics = 'fixed-values' -------------------------*
+*                                                                                  *
+*                                                                                  *
+*----------------------------------- media type -----------------------------------*
+    lo_odata->set_as_media(
+      EXPORTING
+        im_entity                   = 'MyEntityFile'        " Entity Type
+        im_property_mimetype        = 'MimeType'            " MimeType Property Key
+    ).
+
+    lo_odata->set_as_media(
+      EXPORTING
+        im_entity                   = 'ExcelFile'           " Entity Type
+        im_property_mimetype        = 'MimeType'            " MimeType Property Key
+    ).
+*----------------------------------- media type -----------------------------------*
+*                                                                                  *
+*                                                                                  *
+*---------------------------- sap:semantics = 'email' -----------------------------*
+    lo_odata->set_as_email(
+      EXPORTING
+        im_entity                   = 'MyEntity'            " Entity Type
+        im_properties               = 'EmailRecipient'      " List of properties of the entity separated by ','
+    ).
+*---------------------------- sap:semantics = 'email' -----------------------------*
+*                                                                                  *
+*                                                                                  *
+*--------------------------- sap:semantics = 'aggregate' --------------------------*
+
+    lo_odata->set_as_aggregate( im_entity = 'MyEntityItem' ).     " Entity Type
+
+*--------------------------- sap:semantics = 'aggregate' --------------------------*
+*                                                                                  *
+*                                                                                  *
+*-------------------------------------- sap:unit ----------------------------------*
+*    lo_odata->set_as_unit(
+*      exporting
+*        im_entity                   = 'MyEntityItem'    " Entity Type
+*        im_properties               = 'Quantity1,Quantity2'    " List of properties of the entity separated by ','
+*        iv_property_unit            = 'Uom'    " Unit Property
+*    ).
+*-------------------------------------- sap:unit ----------------------------------*
+*                                                                                  *
+*                                                                                  *
+*-------------------------------------- sap:label ----------------------------------*
+    lo_odata->set_label(
+      EXPORTING
+        im_entity                   = 'MyEntityItem'    " Entity Type
+        im_property                 = 'Order'    " Property Key
+        im_label                    = 'Ordered Quantity'    " Label Text
+    ).
+
+    lo_odata->set_label(
+      EXPORTING
+        im_entity                   = 'MyEntityItem'    " Entity Type
+        im_property                 = 'Ordered'    " Property Key
+        im_label                    = 'Ordered'    " Label Text
+    ).
+
+    lo_odata->set_label(
+      EXPORTING
+        im_entity                   = 'MyEntityItem'    " Entity Type
+        im_property                 = 'TotalOrdered'    " Property Key
+        im_label                    = 'Total Ordered'    " Label Text
+    ).
+
+    lo_odata->set_label(
+      EXPORTING
+        im_entity                   = 'MyEntityItem'    " Entity Type
+        im_property                 = 'MyEntityed'    " Property Key
+        im_label                    = 'MyEntityed'    " Label Text
+    ).
+
+    lo_odata->set_label(
+      EXPORTING
+        im_entity                   = 'MyEntityItem'    " Entity Type
+        im_property                 = 'TotalSupplier'    " Property Key
+        im_label                    = 'Total Supplier'    " Label Text
+    ).
+*-------------------------------------- sap:unit ----------------------------------*
+
+  ENDMETHOD.

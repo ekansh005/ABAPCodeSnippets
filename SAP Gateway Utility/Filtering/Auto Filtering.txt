@@ -1,0 +1,3 @@
+    DATA(lt_filters) = io_tech_request_context->get_filter( )->get_filter_select_options( ).
+    "filter down the data as per the optional filters provided in OData call URL
+    /iwbep/cl_mgw_data_util=>filtering( EXPORTING it_select_options = lt_filters CHANGING ct_data = et_entityset ).
