@@ -1,4 +1,4 @@
-Raise Error by catchin exception
+"Raise Error by catchin exception
 
       CATCH zcx_my_exception INTO DATA(lo_error).
 
@@ -16,7 +16,17 @@ Raise Error by catchin exception
             textid            = /iwbep/cx_mgw_busi_exception=>business_error
             message_container = lo_message_container.
 
-Raise Exception from return parameters
+"populate return structure from exception raised during FM call
+
+      ex_return-type = sy-msgty.
+      ex_return-id = sy-msgid.
+      ex_return-number = sy-msgno.
+      ex_return-message_v1 = sy-msgv1.
+      ex_return-message_v2 = sy-msgv2.
+      ex_return-message_v3 = sy-msgv3.
+      ex_return-message_v4 = sy-msgv4.            
+
+"Raise Exception from return parameters
 
 RAISE EXCEPTION TYPE zcx_cs_otch
         EXPORTING
