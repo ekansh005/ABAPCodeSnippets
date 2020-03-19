@@ -86,27 +86,48 @@ public section.
     importing
       !IM_ENTITY type /IWBEP/MED_EXTERNAL_NAME
       !IM_PROPERTY type /IWBEP/MED_EXTERNAL_NAME
-      !IM_LABEL type /IWBEP/MED_ANNOTATION_VALUE
+      !IM_LABEL type /IWBEP/MED_ANNOTATION_VALUE optional
+      !IM_SET_SAP_LABEL type FLAG default ABAP_FALSE
+      !IM_TEXT_ELEMENT_SYMBOL type TEXTPOOLKY optional
+      !IM_CONTAINER_OBJECT_REF type ref to OBJECT optional
+    raising
+      /IWBEP/CX_MGW_MED_EXCEPTION .
+  methods SET_REQUIRED_FILTER
+    importing
+      !IM_ENTITY type /IWBEP/MED_EXTERNAL_NAME
+      !IM_PROPERTIES type STRING
+      !IM_VALUE type BOOLEAN default ABAP_TRUE
+    raising
+      /IWBEP/CX_MGW_MED_EXCEPTION .
+  methods SET_FILTER_RESTRICTION
+    importing
+      !IM_ENTITY type /IWBEP/MED_EXTERNAL_NAME
+      !IM_PROPERTIES type STRING
+      !IM_SINGLE_VALUE type BOOLEAN default ABAP_FALSE
+      !IM_MULTI_VALUE type BOOLEAN default ABAP_FALSE
+      !IM_INTERVAL type BOOLEAN default ABAP_FALSE
     raising
       /IWBEP/CX_MGW_MED_EXCEPTION .
 protected section.
 private section.
 
-  data GV_MODEL type ref to /IWBEP/IF_MGW_ODATA_MODEL .
-  constants GC_SAP type /IWBEP/MED_ANNO_NAMESPACE value 'sap' ##NO_TEXT.
-  constants GC_DISPLAY_FORMAT type /IWBEP/MED_ANNOTATION_KEY value 'display-format' ##NO_TEXT.
-  constants GC_SEMANTICS type /IWBEP/MED_ANNOTATION_KEY value 'semantics' ##NO_TEXT.
-  constants GC_FIXED_VALUES type /IWBEP/MED_ANNOTATION_VALUE value 'fixed-values' ##NO_TEXT.
-  constants GC_TEXT type /IWBEP/MED_ANNOTATION_KEY value 'text' ##NO_TEXT.
-  constants GC_EMAIL type /IWBEP/MED_ANNOTATION_VALUE value 'email' ##NO_TEXT.
   constants GC_AGGREGATE type /IWBEP/MED_ANNOTATION_VALUE value 'aggregate' ##NO_TEXT.
+  constants GC_DISPLAY_FORMAT type /IWBEP/MED_ANNOTATION_KEY value 'display-format' ##NO_TEXT.
+  constants GC_EMAIL type /IWBEP/MED_ANNOTATION_VALUE value 'email' ##NO_TEXT.
+  constants GC_FILTER_RESTRICTION type /IWBEP/MED_ANNOTATION_KEY value 'filter-restriction' ##NO_TEXT.
+  constants GC_FIXED_VALUES type /IWBEP/MED_ANNOTATION_VALUE value 'fixed-values' ##NO_TEXT.
+  constants GC_REQUIRED_IN_FILTER type /IWBEP/MED_ANNOTATION_KEY value 'required-in-filter' ##NO_TEXT.
+  constants GC_SAP type /IWBEP/MED_ANNO_NAMESPACE value 'sap' ##NO_TEXT.
+  constants GC_SEMANTICS type /IWBEP/MED_ANNOTATION_KEY value 'semantics' ##NO_TEXT.
+  constants GC_TEXT type /IWBEP/MED_ANNOTATION_KEY value 'text' ##NO_TEXT.
   constants GC_UNIT type /IWBEP/MED_ANNOTATION_KEY value 'unit' ##NO_TEXT.
-  data GV_VOCAB_ANNO_MODEL type ref to /IWBEP/IF_MGW_VOCAN_MODEL .
-  data GV_REFERENCE_COMMON type ref to /IWBEP/IF_MGW_VOCAN_REFERENCE .
   data GV_ANNOTATION type ref to /IWBEP/IF_MGW_VOCAN_ANNOTATION .
   data GV_ANNOTATION_TARGET type ref to /IWBEP/IF_MGW_VOCAN_ANN_TARGET .
-  data GV_SIMPLE_VALUE type ref to /IWBEP/IF_MGW_VOCAN_SIMPLE_VAL .
+  data GV_MODEL type ref to /IWBEP/IF_MGW_ODATA_MODEL .
+  data GV_REFERENCE_COMMON type ref to /IWBEP/IF_MGW_VOCAN_REFERENCE .
   data GV_SERVICE_NAME type STRING .
+  data GV_SIMPLE_VALUE type ref to /IWBEP/IF_MGW_VOCAN_SIMPLE_VAL .
+  data GV_VOCAB_ANNO_MODEL type ref to /IWBEP/IF_MGW_VOCAN_MODEL .
 ENDCLASS.
 
 
@@ -449,11 +470,61 @@ CLASS ZCL_ODATA_V2_ANNOTATIONS IMPLEMENTATION.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_ODATA_V2_ANNOTATIONS->SET_FILTER_RESTRICTION
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IM_ENTITY                      TYPE        /IWBEP/MED_EXTERNAL_NAME
+* | [--->] IM_PROPERTIES                  TYPE        STRING
+* | [--->] IM_SINGLE_VALUE                TYPE        BOOLEAN (default =ABAP_FALSE)
+* | [--->] IM_MULTI_VALUE                 TYPE        BOOLEAN (default =ABAP_FALSE)
+* | [--->] IM_INTERVAL                    TYPE        BOOLEAN (default =ABAP_FALSE)
+* | [!CX!] /IWBEP/CX_MGW_MED_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD set_filter_restriction.
+
+*---------------------------------------------------------------------*
+*this defines what value type the filter should have
+* single-value
+* multi-value
+* interval
+* https://ui5.sap.com/1.60.6/#/api/sap.ui.comp.smartfilterbar.SmartFilterBar/annotations/FilterExpressionType
+*---------------------------------------------------------------------*
+
+    DATA: lv_o_entity_type TYPE REF TO /iwbep/if_mgw_odata_entity_typ,
+          lv_o_property    TYPE REF TO /iwbep/cl_mgw_odata_property,
+          lv_o_annotation  TYPE REF TO /iwbep/if_mgw_odata_annotation,
+          lit_property     TYPE TABLE OF /iwbep/med_external_name.
+
+    lv_o_entity_type = gv_model->get_entity_type( iv_entity_name = im_entity ).
+
+    IF lv_o_entity_type IS BOUND.
+
+      SPLIT im_properties AT ',' INTO TABLE lit_property.
+
+      LOOP AT lit_property ASSIGNING FIELD-SYMBOL(<lfs_property>).
+        CLEAR: lv_o_property, lv_o_annotation.
+        lv_o_property ?= lv_o_entity_type->get_property( <lfs_property> ).
+        IF lv_o_property IS BOUND.
+          lv_o_annotation = lv_o_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( gc_sap ).
+          lv_o_annotation->add( iv_key = gc_filter_restriction iv_value = COND #( WHEN im_interval EQ abap_true THEN 'interval'
+                                                                                  WHEN im_single_value EQ abap_true THEN 'single-value'
+                                                                                  WHEN im_multi_value EQ abap_true THEN 'multi-value'
+                                                                                  ELSE 'multi-value' ) ).
+        ENDIF.
+      ENDLOOP.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
 * | Instance Public Method ZCL_ODATA_V2_ANNOTATIONS->SET_LABEL
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] IM_ENTITY                      TYPE        /IWBEP/MED_EXTERNAL_NAME
 * | [--->] IM_PROPERTY                    TYPE        /IWBEP/MED_EXTERNAL_NAME
-* | [--->] IM_LABEL                       TYPE        /IWBEP/MED_ANNOTATION_VALUE
+* | [--->] IM_LABEL                       TYPE        /IWBEP/MED_ANNOTATION_VALUE(optional)
+* | [--->] IM_SET_SAP_LABEL               TYPE        FLAG (default =ABAP_FALSE)
+* | [--->] IM_TEXT_ELEMENT_SYMBOL         TYPE        TEXTPOOLKY(optional)
+* | [--->] IM_CONTAINER_OBJECT_REF        TYPE REF TO OBJECT(optional)
 * | [!CX!] /IWBEP/CX_MGW_MED_EXCEPTION
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD set_label.
@@ -461,23 +532,76 @@ CLASS ZCL_ODATA_V2_ANNOTATIONS IMPLEMENTATION.
 * Method to set sap:label = text label        *
 *---------------------------------------------------------------------*
     DATA: lv_o_entity_type TYPE REF TO /iwbep/if_mgw_odata_entity_typ,
-          lv_o_property    TYPE REF TO /iwbep/cl_mgw_odata_property,
+          lv_o_property    TYPE REF TO /iwbep/if_mgw_odata_property,
           lv_o_annotation  TYPE REF TO /iwbep/if_mgw_odata_annotation,
           lv_o_entity_set  TYPE REF TO /iwbep/if_mgw_odata_entity_set.
 
     lv_o_entity_type = gv_model->get_entity_type( iv_entity_name = im_entity ).
     IF lv_o_entity_type IS BOUND.
       lv_o_property ?= lv_o_entity_type->get_property( im_property ).
-*      lv_o_annotation = lv_o_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( gc_sap ).
-*      lv_o_annotation->add( iv_key = 'label' iv_value = iv_label ).
+      IF im_set_sap_label EQ abap_true.
+*        lv_o_annotation = lv_o_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( gc_sap ).
+*        lv_o_annotation->add( iv_key = 'label' iv_value = im_label ).
+        lv_o_property->set_label_from_text_element(
+          EXPORTING
+            iv_text_element_symbol      = im_text_element_symbol    " Text element key (number/selection name)
+            io_object_ref               = im_container_object_ref    " the class/report which contains the text element
+        ).
+*            CATCH /iwbep/cx_mgw_med_exception.    "
+      ENDIF.
+    ENDIF.
+    IF im_set_sap_label EQ abap_false.
+      gv_annotation_target = gv_vocab_anno_model->create_annotations_target( |{ im_entity }/{ im_property }| ).
+      gv_annotation_target->set_namespace_qualifier( gv_service_name ).
+
+      gv_annotation = gv_annotation_target->create_annotation( 'Common.Label' ).
+      gv_simple_value = gv_annotation->create_simple_value( ).
+      gv_simple_value->set_string( im_label ).
+
     ENDIF.
 
-    gv_annotation_target = gv_vocab_anno_model->create_annotations_target( |{ im_entity }/{ im_property }| ).
-    gv_annotation_target->set_namespace_qualifier( gv_service_name ).
+  ENDMETHOD.
 
-    gv_annotation = gv_annotation_target->create_annotation( 'Common.Label' ).
-    gv_simple_value = gv_annotation->create_simple_value( ).
-    gv_simple_value->set_string( im_label ).
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_ODATA_V2_ANNOTATIONS->SET_REQUIRED_FILTER
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IM_ENTITY                      TYPE        /IWBEP/MED_EXTERNAL_NAME
+* | [--->] IM_PROPERTIES                  TYPE        STRING
+* | [--->] IM_VALUE                       TYPE        BOOLEAN (default =ABAP_TRUE)
+* | [!CX!] /IWBEP/CX_MGW_MED_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD set_required_filter.
+
+*---------------------------------------------------------------------*
+* Method to set sap:required-in-filter annotation on the Property
+* can be used for setting the filter as a mandatory filter field      *
+* of a given entity type                                              *
+* There are currently two possible values:                            *
+*     -ABAP_TRUE                                                      *
+*     -ABAP_FALSE                                                     *
+*---------------------------------------------------------------------*
+
+    DATA: lv_o_entity_type TYPE REF TO /iwbep/if_mgw_odata_entity_typ,
+          lv_o_property    TYPE REF TO /iwbep/cl_mgw_odata_property,
+          lv_o_annotation  TYPE REF TO /iwbep/if_mgw_odata_annotation,
+          lit_property     TYPE TABLE OF /iwbep/med_external_name.
+
+    lv_o_entity_type = gv_model->get_entity_type( iv_entity_name = im_entity ).
+
+    IF lv_o_entity_type IS BOUND.
+
+      SPLIT im_properties AT ',' INTO TABLE lit_property.
+
+      LOOP AT lit_property ASSIGNING FIELD-SYMBOL(<lfs_property>).
+        CLEAR: lv_o_property, lv_o_annotation.
+        lv_o_property ?= lv_o_entity_type->get_property( <lfs_property> ).
+        IF lv_o_property IS BOUND.
+          lv_o_annotation = lv_o_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( gc_sap ).
+          lv_o_annotation->add( iv_key = gc_required_in_filter iv_value = COND #( WHEN im_value EQ abap_true THEN 'true' ELSE 'false' ) ).
+        ENDIF.
+      ENDLOOP.
+    ENDIF.
 
   ENDMETHOD.
 
