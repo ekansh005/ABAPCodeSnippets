@@ -8,7 +8,7 @@
       EXPORTING
         im_model            = model
         im_vocab_anno_model = vocab_anno_model
-        im_service_name     = 'Z_MY_SERVICE'.
+        im_service_name     = 'Z_MY_SERVICE_srv'.
 
 *--------------------------------- sap:filterable ---------------------------------*
     lo_odata->set_filterable(
@@ -61,7 +61,7 @@
     lo_odata->set_updateable(
        EXPORTING
          im_entity                   = 'MyEntityItem'            " Entity Type
-         im_properties               = 'Property1,Property2  " List of properties of the entity separated by ','
+         im_properties               = 'Property1,Property2'  " List of properties of the entity separated by ','
          im_value                    = abap_false            " Value for Annotation (Boolean)
      ).
 
