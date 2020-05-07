@@ -1,0 +1,32 @@
+If you want to use different groups for different entities so that you can control the content which will be pushed to server while calling submitChanges
+on OData Model
+
+onInit: function(){
+    this.getOwnerComponent().getModel().metadataLoaded().then(function () {
+        var oModel = this.getOwnerComponent().getModel();
+        var aDeferredGroups = oModel.getDeferredGroups();
+        aDeferredGroups = aDeferredGroups.concat(["group1"]);
+        aDeferredGroups = aDeferredGroups.concat(["group2"]);
+        oModel.setDeferredGroups(aDeferredGroups);
+        oModel.setChangeGroups({
+            "EntityName1": {
+                groupId: "group1"
+            },
+            "EntityName2": {
+                groupId: "group2"
+            }
+        });
+    }.bind(this));
+}
+
+then while calling
+
+onPressSave: function (oEvent) {
+    this.getModel().submitChanges({
+        groupId: "group1",
+        success: function (oData) {
+            MessageBox.success(this.getText("Success.InvoiceDataSaved"));
+        }.bind(this),
+        error: function (err) {}
+    });
+},
