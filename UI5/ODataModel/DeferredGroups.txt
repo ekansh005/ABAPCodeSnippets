@@ -19,6 +19,14 @@ onInit: function(){
     }.bind(this));
 }
 
+create entry
+this.getModel().createEntry("/EntitySet1", {
+    groupId: "group1", 
+    properties: {
+        someProperty: '123'
+    }
+});
+
 then while calling
 
 onPressSave: function (oEvent) {
