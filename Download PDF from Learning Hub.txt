@@ -1,0 +1,10 @@
+1. Open the ebook
+2. Update the endPageNumber and file_path variables and paste this in browswer console.
+
+
+var endPageNumber = 122;
+for (var i = 1; i <= endPageNumber; i++) {
+    var file_path = "https://saplearninghub.plateau.com/icontent_e/CUSTOM_eu/sap/self-managed/ebook/D75AW_EN_Col18_v1/xml/topic" + i + ".svg",
+        a = document.createElement("A");
+    a.href = file_path, a.download = file_path.substr(file_path.lastIndexOf("/") + 1), document.body.appendChild(a), a.click(), document.body.removeChild(a)
+}
