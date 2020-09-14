@@ -1,5 +1,8 @@
 1. Open the ebook
 2. Update the endPageNumber and file_path variables and paste this in browswer console.
+3. Once SVG are downloaded, convert these into pdf here: https://tools.pdf24.org/en/svg-to-pdf
+4. Once PDF files per page are available, merge them using https://tools.pdf24.org/en/merge-pdf
+
 
 
 var endPageNumber = 122;
