@@ -40,3 +40,4 @@ destroy: function () {
 	UIComponent.prototype.destroy.apply(this, arguments);
 },
 ```
+- FAQ: make sure that if you have your own success and error handler functions, those are executed without any exception so that flow can reach this error handler file
