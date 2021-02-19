@@ -1,0 +1,55 @@
+  method READ_SAP_TEXT_TO_STRING.
+
+
+    DATA: lt_lines        TYPE TABLE OF tline,
+          lt_lines_clean  TYPE TABLE OF tline,
+          e_thead         TYPE thead.
+
+
+    " Read text
+    CALL FUNCTION 'READ_TEXT'
+      EXPORTING
+        id                            = i_id
+        language                      = i_language
+        name                          = i_name
+        object                        = i_object
+      IMPORTING
+        header                        = e_thead
+      TABLES
+        lines                         = lt_lines
+     EXCEPTIONS
+       ID                            = 1
+       LANGUAGE                      = 2
+       NAME                          = 3
+       NOT_FOUND                     = 4
+       OBJECT                        = 5
+       REFERENCE_CHECK               = 6
+       WRONG_ACCESS_TO_ARCHIVE       = 7
+       OTHERS                        = 8.
+
+    IF sy-subrc <> 0.
+      " Implement suitable error handling here
+    ENDIF.
+
+
+    " The QMEL LTEXT is in PM format. The rest is "normal".
+    IF i_id EQ 'LTXT'.
+
+      LOOP AT lt_lines ASSIGNING FIELD-SYMBOL(<fs_line>).
+        APPEND INITIAL LINE TO lt_lines_clean ASSIGNING FIELD-SYMBOL(<fs_clean>).
+
+        <fs_clean>-tdformat = <fs_line>-tdline(2).    " First 2 characters
+        <fs_clean>-tdline   = <fs_line>-tdline+2.     " The rest with 2 offset
+
+      ENDLOOP.
+
+      " Convert to string
+      r_text_string = me->convert_txttable_to_string( lt_lines_clean ).
+
+    ELSE.
+      " Convert to string
+      r_text_string = me->convert_txttable_to_string( lt_lines ).
+
+    ENDIF.
+
+  endmethod.

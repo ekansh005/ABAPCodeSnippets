@@ -1,0 +1,49 @@
+  method SAVE_SAP_TEXT_FROM_STRING.
+
+    DATA: thead       TYPE thead,
+          l_tline     TYPE tline,
+          lt_tlines   TYPE TABLE OF tline.
+
+
+
+* Convert from string to text lines
+    CALL FUNCTION 'VB_CP_CONVERT_STRING_2_ITF'
+      EXPORTING
+        i_string = i_text_string
+      TABLES
+        et_table = lt_tlines.
+
+
+
+    thead-tdid = i_id.
+    thead-tdname = i_name.
+    thead-tdobject = i_object.
+    thead-tdspras = i_language.
+
+    CALL FUNCTION 'SAVE_TEXT'
+      EXPORTING
+*       CLIENT                = SY-MANDT
+        header                = thead
+        insert                = ''
+        savemode_direct       = 'X'
+*       OWNER_SPECIFIED       = ' '
+*       LOCAL_CAT             = ' '
+*     IMPORTING
+*       FUNCTION              =
+*       NEWHEADER             =
+      tables
+        lines                 = lt_tlines
+*     EXCEPTIONS
+*       ID                    = 1
+*       LANGUAGE              = 2
+*       NAME                  = 3
+*       OBJECT                = 4
+*       OTHERS                = 5
+              .
+    IF sy-subrc <> 0.
+* Implement suitable error handling here
+    ENDIF.
+
+
+
+  endmethod.

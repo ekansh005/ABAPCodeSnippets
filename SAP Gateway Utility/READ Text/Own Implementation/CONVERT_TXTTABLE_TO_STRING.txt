@@ -1,0 +1,26 @@
+  METHOD convert_txttable_to_string.
+
+    DATA: lv_new_line TYPE string.
+
+    lv_new_line = COND #( WHEN i_new_line_seperator IS INITIAL THEN cl_abap_char_utilities=>newline ELSE i_new_line_seperator ).
+
+    LOOP AT i_text_table ASSIGNING FIELD-SYMBOL(<line>).
+      REPLACE ALL OCCURRENCES OF REGEX '<[()]>' IN <line>-tdline WITH ''.
+      "proposed by ekansh
+      "if it's first line, its always just added due to begining of content
+      IF sy-tabix EQ 1.
+        r_string = r_string && <line>-tdline.
+      ELSE.
+        IF <line>-tdformat IS INITIAL.
+          CONCATENATE r_string <line>-tdline INTO r_string SEPARATED BY space.
+*          r_string = r_string && space && <line>-tdline.
+        ELSEIF <line>-tdformat EQ '/' OR <line>-tdformat EQ '*'.  "this means a new line or new line with same format
+          r_string = r_string && lv_new_line && <line>-tdline.
+        ELSEIF <line>-tdformat EQ '='. "this means a continuous line
+          "i.e. just add the character without space to the previous character
+          r_string = r_string && <line>-tdline.
+        ENDIF.
+      ENDIF.
+    ENDLOOP.
+
+  ENDMETHOD.
