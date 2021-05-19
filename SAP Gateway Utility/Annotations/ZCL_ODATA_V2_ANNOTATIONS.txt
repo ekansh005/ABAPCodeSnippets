@@ -108,6 +108,12 @@ public section.
       !IM_INTERVAL type BOOLEAN default ABAP_FALSE
     raising
       /IWBEP/CX_MGW_MED_EXCEPTION .
+  methods SET_TREE_TABLE_PROPERTIES
+    importing
+      !IM_ENTITY type /IWBEP/MED_EXTERNAL_NAME
+      !IM_NODE_ID_FIELD type /IWBEP/MED_EXTERNAL_NAME
+      !IM_LEVEL_FIELD type /IWBEP/MED_EXTERNAL_NAME
+      !IM_PARENT_RELATION_FIELD type /IWBEP/MED_EXTERNAL_NAME .
 protected section.
 private section.
 
@@ -121,6 +127,9 @@ private section.
   constants GC_SEMANTICS type /IWBEP/MED_ANNOTATION_KEY value 'semantics' ##NO_TEXT.
   constants GC_TEXT type /IWBEP/MED_ANNOTATION_KEY value 'text' ##NO_TEXT.
   constants GC_UNIT type /IWBEP/MED_ANNOTATION_KEY value 'unit' ##NO_TEXT.
+  constants GC_NODE_FOR type /IWBEP/MED_ANNOTATION_KEY value 'hierarchy-node-for' ##NO_TEXT.
+  constants GC_LEVEL_FOR type /IWBEP/MED_ANNOTATION_KEY value 'hierarchy-level-for' ##NO_TEXT.
+  constants GC_PARENT_NODE_FOR type /IWBEP/MED_ANNOTATION_KEY value 'hierarchy-parent-node-for' ##NO_TEXT.
   data GV_ANNOTATION type ref to /IWBEP/IF_MGW_VOCAN_ANNOTATION .
   data GV_ANNOTATION_TARGET type ref to /IWBEP/IF_MGW_VOCAN_ANN_TARGET .
   data GV_MODEL type ref to /IWBEP/IF_MGW_ODATA_MODEL .
@@ -642,6 +651,53 @@ CLASS ZCL_ODATA_V2_ANNOTATIONS IMPLEMENTATION.
       endloop.
     endif.
   endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_ODATA_V2_ANNOTATIONS->SET_TREE_TABLE_PROPERTIES
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IM_ENTITY                      TYPE        /IWBEP/MED_EXTERNAL_NAME
+* | [--->] IM_NODE_ID_FIELD               TYPE        /IWBEP/MED_EXTERNAL_NAME
+* | [--->] IM_LEVEL_FIELD                 TYPE        /IWBEP/MED_EXTERNAL_NAME
+* | [--->] IM_PARENT_RELATION_FIELD       TYPE        /IWBEP/MED_EXTERNAL_NAME
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD set_tree_table_properties.
+
+    DATA: lv_o_entity_type TYPE REF TO /iwbep/if_mgw_odata_entity_typ,
+          lv_o_property    TYPE REF TO /iwbep/cl_mgw_odata_property,
+          lv_o_annotation  TYPE REF TO /iwbep/if_mgw_odata_annotation,
+          lv_o_entity_set  TYPE REF TO /iwbep/if_mgw_odata_entity_set,
+          lit_property     TYPE TABLE OF /iwbep/med_external_name.
+
+    TRY.
+        lv_o_entity_type = gv_model->get_entity_type( iv_entity_name = im_entity ).
+      CATCH /iwbep/cx_mgw_med_exception.
+    ENDTRY.
+    IF lv_o_entity_type IS BOUND.
+      TRY .
+          lv_o_property ?= lv_o_entity_type->get_property( im_node_id_field ).
+          lv_o_annotation = lv_o_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( gc_sap ).
+          lv_o_annotation->add( iv_key = gc_node_for iv_value = CONV #( im_node_id_field ) ).
+        CATCH /iwbep/cx_mgw_med_exception.
+      ENDTRY.
+
+      TRY .
+          lv_o_property ?= lv_o_entity_type->get_property( IM_LEVEL_FIELD ).
+          lv_o_annotation = lv_o_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( gc_sap ).
+          lv_o_annotation->add( iv_key = gc_level_for iv_value = CONV #( im_node_id_field ) ).
+        CATCH /iwbep/cx_mgw_med_exception.
+      ENDTRY.
+
+      TRY .
+          lv_o_property ?= lv_o_entity_type->get_property( IM_PARENT_RELATION_FIELD ).
+          lv_o_annotation = lv_o_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( gc_sap ).
+          lv_o_annotation->add( iv_key = gc_parent_node_for iv_value = CONV #( im_node_id_field ) ).
+        CATCH /iwbep/cx_mgw_med_exception.
+      ENDTRY.
+    ENDIF.
+
+
+  ENDMETHOD.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
