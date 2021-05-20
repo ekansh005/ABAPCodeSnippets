@@ -114,7 +114,8 @@ public section.
       !IM_NODE_ID_FIELD type /IWBEP/MED_EXTERNAL_NAME
       !IM_LEVEL_FIELD type /IWBEP/MED_EXTERNAL_NAME
       !IM_PARENT_RELATION_FIELD type /IWBEP/MED_EXTERNAL_NAME
-      !IM_DRILL_DOWN_FIELD type /IWBEP/MED_EXTERNAL_NAME .
+      !IM_DRILL_DOWN_FIELD type /IWBEP/MED_EXTERNAL_NAME
+      !IM_MAGNITUDE_FIELD type /IWBEP/MED_EXTERNAL_NAME optional .
 protected section.
 private section.
 
@@ -132,6 +133,7 @@ private section.
   constants GC_LEVEL_FOR type /IWBEP/MED_ANNOTATION_KEY value 'hierarchy-level-for' ##NO_TEXT.
   constants GC_PARENT_NODE_FOR type /IWBEP/MED_ANNOTATION_KEY value 'hierarchy-parent-node-for' ##NO_TEXT.
   constants GC_DRILL_STATE_FOR type /IWBEP/MED_ANNOTATION_KEY value 'hierarchy-drill-state-for' ##NO_TEXT.
+  constants GC_DESCENDANT_COUNT_FOR type /IWBEP/MED_ANNOTATION_KEY value 'hierarchy-node-descendant-count-for' ##NO_TEXT.
   data GV_ANNOTATION type ref to /IWBEP/IF_MGW_VOCAN_ANNOTATION .
   data GV_ANNOTATION_TARGET type ref to /IWBEP/IF_MGW_VOCAN_ANN_TARGET .
   data GV_MODEL type ref to /IWBEP/IF_MGW_ODATA_MODEL .
@@ -663,6 +665,7 @@ CLASS ZCL_ODATA_V2_ANNOTATIONS IMPLEMENTATION.
 * | [--->] IM_LEVEL_FIELD                 TYPE        /IWBEP/MED_EXTERNAL_NAME
 * | [--->] IM_PARENT_RELATION_FIELD       TYPE        /IWBEP/MED_EXTERNAL_NAME
 * | [--->] IM_DRILL_DOWN_FIELD            TYPE        /IWBEP/MED_EXTERNAL_NAME
+* | [--->] IM_MAGNITUDE_FIELD             TYPE        /IWBEP/MED_EXTERNAL_NAME(optional)
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD set_tree_table_properties.
 
@@ -704,6 +707,16 @@ CLASS ZCL_ODATA_V2_ANNOTATIONS IMPLEMENTATION.
           lv_o_annotation->add( iv_key = gc_drill_state_for iv_value = CONV #( im_node_id_field ) ).
         CATCH /iwbep/cx_mgw_med_exception.
       ENDTRY.
+
+      IF im_magnitude_field IS NOT INITIAL.
+        TRY .
+            lv_o_property ?= lv_o_entity_type->get_property( im_magnitude_field ).
+            lv_o_annotation = lv_o_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( gc_sap ).
+            lv_o_annotation->add( iv_key = gc_descendant_count_for iv_value = CONV #( im_node_id_field ) ).
+          CATCH /iwbep/cx_mgw_med_exception.
+        ENDTRY.
+      ENDIF.
+
     ENDIF.
 
 
