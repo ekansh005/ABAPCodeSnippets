@@ -1,0 +1,14 @@
+onBeforeRebindTable: function (evt) {
+    var mBindingParams = evt.getParameter("bindingParams");
+    var aFilters = this.applyFilters();
+    aFilters.forEach(function (oFilter) {
+        mBindingParams.filters.push(oFilter);
+    });
+
+    // since we are currently on v 1.52, this way of attaching the event handler does not work
+    // this will required since 1.56
+    // mBindingParams.events = {
+    //   dataRequested: this.onDataRequested.bind(this),
+    //   dataReceived: this.onDataReceived.bind(this),
+    // };
+},
