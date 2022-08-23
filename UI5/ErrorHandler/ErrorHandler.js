@@ -45,7 +45,12 @@ sap.ui.define(["sap/ui/base/Object", "sap/m/MessageBox"], function (UI5Object, M
       var oError, oParser, oXmlDoc, sJSONText, sMessage, sHtml, sHtmlJSONText;
 
       /*-------------------------------------------------------------------------*/
-
+      // if we specifically want to skip showing error message for a particular OData call,
+      // set this.getOwnerComponent()._bSkipError = true in the error handler of OData call
+      if (this.getOwnerComponent()._bSkipError) {
+        this.getOwnerComponent()._bSkipError = false;
+        return;
+      }
       if (this._bMessageOpen) {
         return;
       }
