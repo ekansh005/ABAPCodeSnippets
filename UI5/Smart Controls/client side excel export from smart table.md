@@ -4,8 +4,6 @@ In this case, you can disable the pagination in your smart table to load the who
 
 It is important to note that whole data set should be already available on the client side.
 
-
-
 Add this to your smart table code:
 
 ```
@@ -32,7 +30,7 @@ Then in your controller, copy the dataset to a local variable for easy access:
           dataReceived: this.onDataReceived.bind(this),
         };
       },
-      
+
       onDataReceived: function (oEvent) {
         this.getView().getModel("appView").setProperty("/busy", false);
         this.aSmartTableData = oEvent.getParameter("data").results;
@@ -42,7 +40,9 @@ Then in your controller, copy the dataset to a local variable for easy access:
 Then provide the local data source at the time of export.
 
 ```js
-
+      onBeforeExport: function (oEvent) {
+        // since the data in smart table could be huge and alredy loaded on the client side,
+        // we need to utilize the same data instead of fetching it again (default behavior)
+        oEvent.getParameter("exportSettings").dataSource = this.aSmartTableData;
+      },
 ```
-
-
