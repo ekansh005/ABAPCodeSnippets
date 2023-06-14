@@ -31,6 +31,9 @@
                 data.type = item.getBindingInfo("text").binding.getType()?.getName() || "String";
                 data.bindingInfos.push(item.getBindingInfo("text").parts[0]);
               });
+            } else if (controlType === "sap.m.Input") {
+              data.type = cell.getBindingInfo("value").binding.getType()?.getName() || "String";
+              data.bindingInfos.push(cell.getBindingInfo("value").parts[0]);
             }
             cellsConfig.push(data);
           });
